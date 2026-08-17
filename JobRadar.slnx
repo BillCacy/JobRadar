@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Client/">
+    <Project Path="src/Client/JobRadar.App/JobRadar.App.csproj" />
+  </Folder>
+  <Folder Name="/src/Gateway/">
+    <Project Path="src/Gateway/JobRadar.Gateway/JobRadar.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/">
+    <Project Path="src/Services/JobRadar.JobAggregator/JobRadar.JobAggregator.csproj" />
+    <Project Path="src/Services/JobRadar.Matching/JobRadar.Matching.csproj" />
+    <Project Path="src/Services/JobRadar.Notifications/JobRadar.Notifications.csproj" />
+    <Project Path="src/Services/JobRadar.Users/JobRadar.Users.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/JobRadar.Contracts/JobRadar.Contracts.csproj" />
+  </Folder>
+</Solution>

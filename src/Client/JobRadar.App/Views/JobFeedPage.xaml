@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:JobRadar.App.ViewModels"
+             xmlns:services="clr-namespace:JobRadar.App.Services"
+             x:Class="JobRadar.App.Views.JobFeedPage"
+             x:DataType="vm:JobFeedViewModel"
+             Title="Job Feed">
+    <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="12">
+        <ActivityIndicator Grid.Row="0" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Notifications}">
+            <CollectionView.EmptyView>
+                <Label Text="No matches yet. Add a saved search in the other tab and JobRadar will alert you here the moment one comes in."
+                       HorizontalTextAlignment="Center" Margin="24" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="services:NotificationDto">
+                    <Border Padding="12" Margin="0,0,0,8" StrokeShape="RoundRectangle 8">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{Binding JobTitle}" FontAttributes="Bold" FontSize="16" />
+                            <Label Text="{Binding Company}" />
+                            <Label Text="{Binding Location}" FontSize="12" TextColor="Gray" />
+                            <Label Text="{Binding MatchedAt, StringFormat='matched {0:g}'}" FontSize="11" TextColor="Gray" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

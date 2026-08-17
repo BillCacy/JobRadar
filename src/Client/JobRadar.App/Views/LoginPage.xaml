@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="JobRadar.App.Views.LoginPage"
+             Title="JobRadar">
+    <VerticalStackLayout Padding="24" Spacing="16" VerticalOptions="Center">
+        <Label Text="JobRadar" FontSize="32" HorizontalOptions="Center" />
+        <Label Text="Enter your email to get started. This demo build skips passwords entirely - see the Users service README notes for what real auth would replace it with."
+               FontSize="12" />
+        <Entry x:Name="EmailEntry" Placeholder="you@example.com" Keyboard="Email" />
+        <Button Text="Continue" Clicked="OnContinueClicked" />
+        <ActivityIndicator x:Name="Spinner" IsRunning="False" IsVisible="False" />
+        <Label x:Name="ErrorLabel" TextColor="Red" IsVisible="False" />
+    </VerticalStackLayout>
+</ContentPage>

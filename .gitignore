@@ -1,0 +1,20 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.suo
+
+# Secrets - never commit your real keys
+.env
+
+# MAUI / mobile build output
+*.ipa
+*.apk
+*.aab
+Platforms/**/obj/
+Platforms/**/bin/
+
+# OS cruft
+.DS_Store
+Thumbs.db

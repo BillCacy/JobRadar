@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:JobRadar.App.ViewModels"
+             xmlns:models="clr-namespace:JobRadar.Contracts.Models;assembly=JobRadar.Contracts"
+             x:Class="JobRadar.App.Views.SearchCriteriaPage"
+             x:DataType="vm:SearchCriteriaViewModel"
+             Title="Saved Searches">
+    <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="16">
+        <VerticalStackLayout Grid.Row="0" Spacing="8">
+            <Entry Placeholder="Keywords (e.g. senior .NET developer)" Text="{Binding Keywords}" />
+            <Entry Placeholder="Location (e.g. Remote, or a city)" Text="{Binding Location}" />
+            <Entry Placeholder="Minimum salary (optional)" Keyboard="Numeric" Text="{Binding MinSalaryText}" />
+            <HorizontalStackLayout Spacing="8">
+                <CheckBox IsChecked="{Binding RemoteOnly}" />
+                <Label Text="Remote only" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <!-- Simple by design: no value converter registered, so this just shows/collapses
+                 to an empty line rather than being hidden outright when there's no error. -->
+            <Label Text="{Binding ErrorMessage}" TextColor="Red" />
+            <Button Text="Save search" Command="{Binding SaveCommand}" />
+            <Label Text="Tap a saved search below to remove it." FontSize="11" TextColor="Gray" />
+        </VerticalStackLayout>
+
+        <CollectionView Grid.Row="1"
+                         ItemsSource="{Binding SavedSearches}"
+                         SelectionMode="Single"
+                         SelectionChanged="OnSavedSearchSelected">
+            <CollectionView.EmptyView>
+                <Label Text="No saved searches yet - add one above." HorizontalTextAlignment="Center" Margin="24" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:SearchCriteria">
+                    <VerticalStackLayout Padding="8">
+                        <Label Text="{Binding Keywords}" FontAttributes="Bold" />
+                        <Label Text="{Binding Location}" FontSize="12" TextColor="Gray" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

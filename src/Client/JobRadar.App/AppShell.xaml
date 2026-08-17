@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="JobRadar.App.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:JobRadar.App.Views"
+    Title="JobRadar">
+
+    <TabBar>
+        <ShellContent
+            Title="Job Feed"
+            Route="JobFeed"
+            ContentTemplate="{DataTemplate views:JobFeedPage}" />
+
+        <ShellContent
+            Title="Saved Searches"
+            Route="SearchCriteria"
+            ContentTemplate="{DataTemplate views:SearchCriteriaPage}" />
+    </TabBar>
+
+</Shell>
