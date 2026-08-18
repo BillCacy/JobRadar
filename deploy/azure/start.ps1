@@ -26,14 +26,27 @@ if ([string]::IsNullOrEmpty($resourceGroup)) {
 }
 $namePrefix = if ($env:NAME_PREFIX) { $env:NAME_PREFIX } else { 'jobradar' }
 
+$subscriptionId = az account show --query id -o tsv
+if ($LASTEXITCODE -ne 0) { throw "Not logged in to Azure CLI - run 'az login' first." }
+
+az group show --name $resourceGroup --output none
+if ($LASTEXITCODE -ne 0) { throw "Resource group '$resourceGroup' not found (or you don't have access) - check RESOURCE_GROUP in .env." }
+
 Write-Host "==> Starting Postgres Flexible Server"
 $pgServer = az postgres flexible-server list --resource-group $resourceGroup --query "[0].name" -o tsv
 if ([string]::IsNullOrEmpty($pgServer)) {
     Write-Warning "No Postgres Flexible Server found in $resourceGroup - skipping."
 } else {
-    Write-Host "  - $pgServer (this can take a minute or two)"
-    az postgres flexible-server start --resource-group $resourceGroup --name $pgServer --output none
-    if ($LASTEXITCODE -ne 0) { throw "Failed to start Postgres server $pgServer" }
+    $state = az postgres flexible-server show --resource-group $resourceGroup --name $pgServer --query "state" -o tsv
+    if ($state -eq 'Ready') {
+        Write-Host "  - $pgServer is already running - skipping."
+    } elseif ($state -eq 'Stopped') {
+        Write-Host "  - $pgServer (this can take a minute or two)"
+        az postgres flexible-server start --resource-group $resourceGroup --name $pgServer --output none
+        if ($LASTEXITCODE -ne 0) { throw "Failed to start Postgres server $pgServer" }
+    } else {
+        throw "Postgres server $pgServer is in '$state' state (expected 'Stopped' or 'Ready') - wait for it to settle and try again."
+    }
 }
 
 Write-Host "==> Restoring container app scale settings"
@@ -53,6 +66,12 @@ foreach ($app in $scaleSettings.Keys) {
     Write-Host "  - $app (min=$($s.Min), max=$($s.Max))"
     az containerapp update --resource-group $resourceGroup --name $app --min-replicas $s.Min --max-replicas $s.Max --output none
     if ($LASTEXITCODE -ne 0) { throw "Failed to restore scale for $app" }
+
+    # Scale settings alone don't resume an app that was administratively stopped (e.g. via the
+    # Portal's Stop button, or a previous stop.ps1 run) - that's a separate runningStatus flag
+    # only reachable through this start action, not exposed as a plain `az containerapp` command.
+    az rest --method post --url "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroup/providers/Microsoft.App/containerApps/$app/start?api-version=2023-05-01" --output none
+    if ($LASTEXITCODE -ne 0) { throw "Failed to start container app $app" }
 }
 
 Write-Host "==> Done. jobaggregator-service and notifications-service are pinned on and starting now;"

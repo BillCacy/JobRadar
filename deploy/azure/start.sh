@@ -18,13 +18,31 @@ fi
 RESOURCE_GROUP="${RESOURCE_GROUP:?Set RESOURCE_GROUP in .env or as an environment variable}"
 NAME_PREFIX="${NAME_PREFIX:-jobradar}"
 
+SUBSCRIPTION_ID="$(az account show --query id -o tsv)" || {
+  echo "Not logged in to Azure CLI - run 'az login' first." >&2
+  exit 1
+}
+
+if ! az group show --name "$RESOURCE_GROUP" --output none; then
+  echo "Resource group '$RESOURCE_GROUP' not found (or you don't have access) - check RESOURCE_GROUP in .env." >&2
+  exit 1
+fi
+
 echo "==> Starting Postgres Flexible Server"
 PG_SERVER="$(az postgres flexible-server list --resource-group "$RESOURCE_GROUP" --query "[0].name" -o tsv)"
 if [ -z "$PG_SERVER" ]; then
   echo "  (no Postgres Flexible Server found in $RESOURCE_GROUP - skipping)"
 else
-  echo "  - $PG_SERVER (this can take a minute or two)"
-  az postgres flexible-server start --resource-group "$RESOURCE_GROUP" --name "$PG_SERVER" --output none
+  PG_STATE="$(az postgres flexible-server show --resource-group "$RESOURCE_GROUP" --name "$PG_SERVER" --query "state" -o tsv)"
+  if [ "$PG_STATE" = "Ready" ]; then
+    echo "  - $PG_SERVER is already running - skipping."
+  elif [ "$PG_STATE" = "Stopped" ]; then
+    echo "  - $PG_SERVER (this can take a minute or two)"
+    az postgres flexible-server start --resource-group "$RESOURCE_GROUP" --name "$PG_SERVER" --output none
+  else
+    echo "Postgres server $PG_SERVER is in '$PG_STATE' state (expected 'Stopped' or 'Ready') - wait for it to settle and try again." >&2
+    exit 1
+  fi
 fi
 
 echo "==> Restoring container app scale settings"
@@ -51,6 +69,11 @@ for app in "${!MIN_REPLICAS[@]}"; do
   max="${MAX_REPLICAS[$app]}"
   echo "  - $app (min=$min, max=$max)"
   az containerapp update --resource-group "$RESOURCE_GROUP" --name "$app" --min-replicas "$min" --max-replicas "$max" --output none
+
+  # Scale settings alone don't resume an app that was administratively stopped (e.g. via the
+  # Portal's Stop button, or a previous stop.sh run) - that's a separate runningStatus flag
+  # only reachable through this start action, not exposed as a plain `az containerapp` command.
+  az rest --method post --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.App/containerApps/$app/start?api-version=2023-05-01" --output none
 done
 
 echo "==> Done. jobaggregator-service and notifications-service are pinned on and starting now;"
