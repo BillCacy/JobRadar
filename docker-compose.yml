@@ -40,6 +40,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__User: ${RABBITMQ_USER:-jobradar}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-jobradar}
+      Messaging__Transport: RabbitMq # swap to AzureServiceBus + set AzureServiceBus__ConnectionString for the cloud deploy - see docs/azure-hosting.md
     depends_on:
       postgres: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -58,6 +59,7 @@ services:
       Adzuna__AppKey: ${ADZUNA_APP_KEY:-}
       Adzuna__Country: ${ADZUNA_COUNTRY:-us}
       Jooble__ApiKey: ${JOOBLE_API_KEY:-}
+      Messaging__Transport: RabbitMq
     depends_on:
       postgres: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -71,6 +73,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__User: ${RABBITMQ_USER:-jobradar}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-jobradar}
+      Messaging__Transport: RabbitMq
     depends_on:
       postgres: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -84,6 +87,7 @@ services:
       RabbitMq__Host: rabbitmq
       RabbitMq__User: ${RABBITMQ_USER:-jobradar}
       RabbitMq__Password: ${RABBITMQ_PASSWORD:-jobradar}
+      Messaging__Transport: RabbitMq
     depends_on:
       postgres: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JobRadar.Matching.Consumers;
 
-public class JobsFetchedConsumer(MatchingDbContext db, IPublishEndpoint publishEndpoint, ILogger<JobsFetchedConsumer> logger)
+public class JobsFetchedConsumer(MatchingDbContext db, ISendEndpointProvider sendEndpointProvider, ILogger<JobsFetchedConsumer> logger)
     : IConsumer<JobsFetched>
 {
     public async Task Consume(ConsumeContext<JobsFetched> context)
@@ -32,7 +32,7 @@ public class JobsFetchedConsumer(MatchingDbContext db, IPublishEndpoint publishE
                 JobDedupeKey = job.DedupeKey
             });
 
-            await publishEndpoint.Publish(new JobMatched(criteria.UserId, criteria.Id, job, DateTimeOffset.UtcNow), ct);
+            await sendEndpointProvider.Send(new JobMatched(criteria.UserId, criteria.Id, job, DateTimeOffset.UtcNow), ct);
             newMatches++;
         }
 

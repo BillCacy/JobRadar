@@ -16,7 +16,7 @@ namespace JobRadar.JobAggregator.Jobs;
 public class PollActiveWatchesJob(
     AggregatorDbContext db,
     IEnumerable<IJobConnector> connectors,
-    IPublishEndpoint publishEndpoint,
+    ISendEndpointProvider sendEndpointProvider,
     ILogger<PollActiveWatchesJob> logger) : IJob
 {
     public async Task Execute(IJobExecutionContext context)
@@ -58,7 +58,7 @@ public class PollActiveWatchesJob(
 
             if (jobs.Count > 0)
             {
-                await publishEndpoint.Publish(new JobsFetched(watch.ToContract(), jobs, DateTimeOffset.UtcNow), ct);
+                await sendEndpointProvider.Send(new JobsFetched(watch.ToContract(), jobs, DateTimeOffset.UtcNow), ct);
             }
         }
 

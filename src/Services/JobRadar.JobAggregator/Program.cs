@@ -21,27 +21,51 @@ builder.Services.AddHttpClient<JoobleConnector>(c => c.BaseAddress = new Uri("ht
 builder.Services.AddScoped<IJobConnector, AdzunaConnector>();
 builder.Services.AddScoped<IJobConnector, JoobleConnector>();
 
+var messagingTransport = builder.Configuration["Messaging:Transport"] ?? "RabbitMq";
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<SearchCriteriaSavedConsumer>();
     x.AddConsumer<SearchCriteriaDeletedConsumer>();
 
-    x.UsingRabbitMq((context, cfg) =>
+    if (string.Equals(messagingTransport, "AzureServiceBus", StringComparison.OrdinalIgnoreCase))
     {
-        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+        x.UsingAzureServiceBus((context, cfg) =>
         {
-            h.Username(builder.Configuration["RabbitMq:User"] ?? "guest");
-            h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
-        });
+            cfg.Host(builder.Configuration["AzureServiceBus:ConnectionString"]
+                ?? throw new InvalidOperationException("Missing AzureServiceBus:ConnectionString"));
 
-        // Durable queue named after this service so restarts don't lose in-flight events.
-        cfg.ReceiveEndpoint("jobaggregator-criteria-events", e =>
-        {
-            e.ConfigureConsumer<SearchCriteriaSavedConsumer>(context);
-            e.ConfigureConsumer<SearchCriteriaDeletedConsumer>(context);
+            // Durable queue named after this service so restarts don't lose in-flight events.
+            cfg.ReceiveEndpoint("jobaggregator-criteria-events", e =>
+            {
+                e.ConfigureConsumer<SearchCriteriaSavedConsumer>(context);
+                e.ConfigureConsumer<SearchCriteriaDeletedConsumer>(context);
+            });
         });
-    });
+    }
+    else
+    {
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+            {
+                h.Username(builder.Configuration["RabbitMq:User"] ?? "guest");
+                h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
+            });
+
+            // Durable queue named after this service so restarts don't lose in-flight events.
+            cfg.ReceiveEndpoint("jobaggregator-criteria-events", e =>
+            {
+                e.ConfigureConsumer<SearchCriteriaSavedConsumer>(context);
+                e.ConfigureConsumer<SearchCriteriaDeletedConsumer>(context);
+            });
+        });
+    }
 });
+
+// JobAggregator publishes JobsFetched directly to Matching's queue - see the matching
+// service's Program.cs for why this is Send-to-queue instead of Publish-to-topic.
+EndpointConvention.Map<JobRadar.Contracts.Events.JobsFetched>(new Uri("queue:matching-jobsfetched"));
 
 var pollIntervalMinutes = builder.Configuration.GetValue("Aggregator:PollIntervalMinutes", 10);
 

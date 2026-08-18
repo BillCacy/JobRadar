@@ -6,7 +6,8 @@ portfolio piece to demonstrate ASP.NET Core Web API, microservices, and real-tim
 patterns end to end, with a .NET MAUI client for mobile + desktop.
 
 See [`docs/architecture.md`](docs/architecture.md) for the full diagram and the reasoning
-behind each design choice. This file is just setup + how to poke at it.
+behind each design choice, and [`docs/azure-hosting.md`](docs/azure-hosting.md) for deploying
+the backend to Azure Container Apps. This file is just setup + how to poke at it.
 
 ## What's here
 
@@ -151,7 +152,9 @@ JobRadar/
 ├── docker-compose.yml
 ├── .env.example
 ├── deploy/postgres-init/        # creates one DB per service on first run
+├── deploy/azure/                # Bicep + deploy script for Azure Container Apps
 ├── docs/architecture.md
+├── docs/azure-hosting.md
 ├── scripts/create-solution.sh
 └── src/
     ├── Shared/JobRadar.Contracts/     # DTOs + integration events

@@ -18,7 +18,7 @@ public record CreateCriteriaRequest(
 
 [ApiController]
 [Route("api/criteria")]
-public class CriteriaController(UsersDbContext db, IPublishEndpoint publishEndpoint) : ControllerBase
+public class CriteriaController(UsersDbContext db, ISendEndpointProvider sendEndpointProvider) : ControllerBase
 {
     // Simplified auth: the caller identifies itself with X-User-Id. See UsersController for why.
     private bool TryGetUserId(out Guid userId)
@@ -68,7 +68,7 @@ public class CriteriaController(UsersDbContext db, IPublishEndpoint publishEndpo
         // Tell JobAggregator there's a new watch to poll. It keeps its own local copy of
         // active criteria built purely from this event stream (event-carried state transfer) -
         // it never calls back into this service.
-        await publishEndpoint.Publish(new SearchCriteriaSaved(entity.ToContract()), ct);
+        await sendEndpointProvider.Send(new SearchCriteriaSaved(entity.ToContract()), ct);
 
         return CreatedAtAction(nameof(GetMine), entity.ToContract());
     }
@@ -86,7 +86,7 @@ public class CriteriaController(UsersDbContext db, IPublishEndpoint publishEndpo
         entity.IsActive = false;
         await db.SaveChangesAsync(ct);
 
-        await publishEndpoint.Publish(new SearchCriteriaDeleted(entity.Id, entity.UserId), ct);
+        await sendEndpointProvider.Send(new SearchCriteriaDeleted(entity.Id, entity.UserId), ct);
 
         return NoContent();
     }

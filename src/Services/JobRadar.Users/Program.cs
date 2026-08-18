@@ -1,3 +1,4 @@
+using JobRadar.Contracts.Events;
 using JobRadar.Users.Data;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -17,17 +18,35 @@ builder.Services.AddDbContext<UsersDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("UsersDb")
         ?? throw new InvalidOperationException("Missing ConnectionStrings:UsersDb")));
 
+var messagingTransport = builder.Configuration["Messaging:Transport"] ?? "RabbitMq";
+
 builder.Services.AddMassTransit(x =>
 {
-    x.UsingRabbitMq((context, cfg) =>
+    if (string.Equals(messagingTransport, "AzureServiceBus", StringComparison.OrdinalIgnoreCase))
     {
-        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+        x.UsingAzureServiceBus((context, cfg) =>
         {
-            h.Username(builder.Configuration["RabbitMq:User"] ?? "guest");
-            h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
+            cfg.Host(builder.Configuration["AzureServiceBus:ConnectionString"]
+                ?? throw new InvalidOperationException("Missing AzureServiceBus:ConnectionString"));
         });
-    });
+    }
+    else
+    {
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+            {
+                h.Username(builder.Configuration["RabbitMq:User"] ?? "guest");
+                h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
+            });
+        });
+    }
 });
+
+// Users publishes both criteria events directly to JobAggregator's queue - see the matching
+// service's Program.cs for why this is Send-to-queue instead of Publish-to-topic.
+EndpointConvention.Map<SearchCriteriaSaved>(new Uri("queue:jobaggregator-criteria-events"));
+EndpointConvention.Map<SearchCriteriaDeleted>(new Uri("queue:jobaggregator-criteria-events"));
 
 var app = builder.Build();
 

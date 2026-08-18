@@ -25,23 +25,41 @@ builder.Services.AddDbContext<NotificationsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("NotificationsDb")
         ?? throw new InvalidOperationException("Missing ConnectionStrings:NotificationsDb")));
 
+var messagingTransport = builder.Configuration["Messaging:Transport"] ?? "RabbitMq";
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<JobMatchedConsumer>();
 
-    x.UsingRabbitMq((context, cfg) =>
+    if (string.Equals(messagingTransport, "AzureServiceBus", StringComparison.OrdinalIgnoreCase))
     {
-        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+        x.UsingAzureServiceBus((context, cfg) =>
         {
-            h.Username(builder.Configuration["RabbitMq:User"] ?? "guest");
-            h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
-        });
+            cfg.Host(builder.Configuration["AzureServiceBus:ConnectionString"]
+                ?? throw new InvalidOperationException("Missing AzureServiceBus:ConnectionString"));
 
-        cfg.ReceiveEndpoint("notifications-jobmatched", e =>
-        {
-            e.ConfigureConsumer<JobMatchedConsumer>(context);
+            cfg.ReceiveEndpoint("notifications-jobmatched", e =>
+            {
+                e.ConfigureConsumer<JobMatchedConsumer>(context);
+            });
         });
-    });
+    }
+    else
+    {
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+            {
+                h.Username(builder.Configuration["RabbitMq:User"] ?? "guest");
+                h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
+            });
+
+            cfg.ReceiveEndpoint("notifications-jobmatched", e =>
+            {
+                e.ConfigureConsumer<JobMatchedConsumer>(context);
+            });
+        });
+    }
 });
 
 var app = builder.Build();
