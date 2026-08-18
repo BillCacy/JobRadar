@@ -28,12 +28,12 @@ See the architecture doc for why.
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) + Docker Compose (for the backend)
-- [.NET 8 SDK](https://dotnet.microsoft.com/download) if you want to run/debug a backend service
-  outside Docker (all five services + `JobRadar.Contracts` target `net8.0`)
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) + the `maui` workload
-  (`dotnet workload install maui`) for the MAUI client — `net8.0-android`/`-ios`/`-maccatalyst`
-  are past their support window and current SDKs refuse to build them (`NETSDK1202`), so
-  `JobRadar.App` targets `net10.0-*` instead
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) if you want to run/debug a backend service
+  outside Docker (all five services + `JobRadar.Contracts` target `net10.0`)
+- The `maui` workload (`dotnet workload install maui`) for the MAUI client on top of the same
+  .NET 10 SDK — `JobRadar.App` targets `net10.0-android`/`-ios`/`-maccatalyst`/`-windows*`, since
+  the older `net8.0` mobile targets are past their support window and current SDKs refuse to
+  build them (`NETSDK1202`)
 - A free [Adzuna](https://developer.adzuna.com/) `app_id` / `app_key` — required
 - A free [Jooble](https://jooble.org/api/about) API key — optional, second connector
 
@@ -106,8 +106,9 @@ open the file and the IDE picks it up.
 
 ### Building and running from the CLI instead
 
-Once `JobRadar.slnx` exists, the `dotnet` CLI works against it directly (requires the .NET 8
-SDK):
+Once `JobRadar.slnx` exists, the `dotnet` CLI works against it directly. Everything - backend
+and the MAUI client alike - targets `.NET 10` now, so a single SDK install covers the whole
+solution (the client additionally needs the `maui` workload - see Prerequisites above):
 
 ```bash
 # Restore + build every project in the solution
